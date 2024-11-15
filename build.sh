@@ -1,15 +1,46 @@
 #!/bin/sh
 
-# Install PHP 8.3 and its dependencies
-dnf install -y php8.3 php8.3-cli php8.3-fpm php8.3-common \
-    php8.3-xml php8.3-mbstring php8.3-zip php8.3-curl \
-    php8.3-gd php8.3-mysqlnd php8.3-intl php8.3-opcache
+# Add Ondrej PHP repository
+apt-get update
+apt-get install -y software-properties-common
+add-apt-repository -y ppa:ondrej/php
+apt-get update
 
-# Install Composer
+# Install PHP 8.3 and required extensions
+apt-get install -y php8.3 \
+    php8.3-common \
+    php8.3-curl \
+    php8.3-mbstring \
+    php8.3-gd \
+    php8.3-bcmath \
+    php8.3-xml \
+    php8.3-fpm \
+    php8.3-intl \
+    php8.3-zip \
+    php8.3-imap \
+    wget \
+    unzip
+
+# INSTALL COMPOSER
+EXPECTED_CHECKSUM="$(wget -q -O - https://composer.github.io/installer.sig)"
 php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
-php composer-setup.php --install-dir=/usr/local/bin --filename=composer
-php -r "unlink('composer-setup.php');"
+ACTUAL_CHECKSUM="$(php -r "echo hash_file('sha384', 'composer-setup.php');")"
 
-# Install dependencies and generate static files
-composer install --no-dev --optimize-autoloader
+if [ "$EXPECTED_CHECKSUM" != "$ACTUAL_CHECKSUM" ]
+then
+    >&2 echo 'ERROR: Invalid installer checksum'
+    rm composer-setup.php
+    exit 1
+fi
+
+php composer-setup.php --quiet
+rm composer-setup.php
+
+# INSTALL COMPOSER DEPENDENCIES
+php composer.phar install
+
+# GENERATE APP KEY
+php artisan key:generate
+
+# BUILD STATIC SITE
 php please ssg:generate
