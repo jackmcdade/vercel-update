@@ -1,0 +1,13 @@
+{
+    "version": 2,
+    "framework": null,
+    "functions": {
+        "api/*.php": {
+            "runtime": "vercel-php@0.6.0"
+        }
+    },
+    "outputDirectory": "storage/app/static",
+    "buildCommand": "chmod +x build.sh && ./build.sh",
+    "devCommand": "php artisan serve",
+    "cleanUrls": true
+}
